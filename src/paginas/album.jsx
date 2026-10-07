@@ -6,6 +6,7 @@ import './album.css'
 
 const ALBUNS = [
   { estojo: '3d/diasantesdocaos.glb', cd: '3d/cddia.glb', lado: -1 },
+  { estojo: '3d/ptqfa.glb', cd: '3d/cdptqfa.glb', lado: 0 },
   { estojo: '3d/caosdlx.glb', cd: '3d/cdcaos.glb', lado: 1 },
 ]
 
@@ -13,14 +14,14 @@ const VIRAR_FRENTE = Math.PI
 const INCLINACAO_Y = -0.3
 const INCLINACAO_X = 0.08
 
-const REPOUSO_X = 0.25
-const REPOUSO_LARGURA = 0.4
+const REPOUSO_X = 0.3
+const REPOUSO_LARGURA = 0.28
 
 const DURACAO = 2.8
+const DURACAO_VIRAR = 0.9
 const ZOOM_ESTOJO = 1.25
 const SAIDA_CD = 0.6
-const ESCALA_ESTOJO_FIM = 0.5
-const POSICAO_ESTOJO_FIM = -0.3
+const POSICAO_ESTOJO_FIM = -0.34
 const TAMANHO_CD_FIM = 0.62
 const VELOCIDADE_GIRO = 2.2
 const INCLINACAO_CD = -0.3
@@ -88,6 +89,8 @@ function Album() {
       estojo: null,
       cd: null,
       seg: { x: 0, y: 0 },
+      virar: 0,
+      vira: 0,
     }))
     let ativo = null
     let raf = 0
@@ -110,21 +113,20 @@ function Album() {
 
       const escalaRepouso = Math.min(1, (REPOUSO_LARGURA * larguraVisivel) / estojo.largura)
       const escalaPerto = Math.min(ZOOM_ESTOJO, (0.85 * larguraVisivel) / estojo.largura)
-      const escalaEstojoFim = Math.min(ESCALA_ESTOJO_FIM, (0.22 * larguraVisivel) / estojo.largura)
       const escalaEstojo =
-        lerp(lerp(escalaRepouso, escalaPerto, a), escalaEstojoFim, c) * (1 - sumir)
+        lerp(escalaRepouso, escalaPerto, a) * (1 - sumir)
 
       const repousoX = al.cfg.lado * REPOUSO_X * larguraVisivel
       const estojoX0 = lerp(repousoX, 0, a)
       const estojoX = lerp(estojoX0, POSICAO_ESTOJO_FIM * larguraVisivel, c)
-      const estojoZ = 0.25 * a * (1 - c)
+      const estojoZ = 0.25 * a
 
       estojo.raiz.visible = sumir < 0.999
       estojo.raiz.scale.setScalar(Math.max(escalaEstojo, 0.0001))
       estojo.raiz.position.set(estojoX, 0, estojoZ)
       estojo.raiz.rotation.set(
         lerp(INCLINACAO_X, 0, a) - al.seg.y * MOUSE_GIRO_X,
-        lerp(VIRAR_FRENTE + INCLINACAO_Y, VIRAR_FRENTE, a) + al.seg.x * MOUSE_GIRO_Y,
+        lerp(VIRAR_FRENTE + INCLINACAO_Y, VIRAR_FRENTE, a) + al.seg.x * MOUSE_GIRO_Y + Math.PI * c + Math.PI * suave(al.vira),
         0
       )
 
@@ -165,12 +167,19 @@ function Album() {
               ? Math.min(al.alvo, al.prog + passo)
               : Math.max(al.alvo, al.prog - passo)
         }
-        if (al.prog !== al.alvo || al.prog > 0.55) continuar = true
+        if (al.vira !== al.virar) {
+          const passoVirar = dt / DURACAO_VIRAR
+          al.vira =
+            al.virar > al.vira
+              ? Math.min(al.virar, al.vira + passoVirar)
+              : Math.max(al.virar, al.vira - passoVirar)
+        }
+        if (al.prog !== al.alvo || al.vira !== al.virar || al.prog > 0.55) continuar = true
       })
 
       if (ativo !== null && albuns[ativo].prog === 0 && albuns[ativo].alvo === 0) ativo = null
 
-      const animando = albuns.some((al) => al.prog !== al.alvo)
+      const animando = albuns.some((al) => al.prog !== al.alvo || al.vira !== al.virar)
       const sobre =
         tela.dentro && !animando && !reduzirMovimento()
           ? acertou({ clientX: tela.x, clientY: tela.y })
@@ -299,6 +308,7 @@ function Album() {
     ro.observe(palco)
     ajustar()
 
+    let tocado = 'estojo'
     const raycaster = new THREE.Raycaster()
     const ponteiro = new THREE.Vector2()
 
@@ -320,12 +330,15 @@ function Album() {
         if (!al.estojo || !al.cd || !al.estojo.raiz.visible) return
         if (ativo !== null && ativo !== i) return
 
-        const alvos = [al.estojo.raiz]
-        if (al.cd.raiz.visible) alvos.push(al.cd.raiz)
-        const hits = raycaster.intersectObjects(alvos, true)
-        if (hits.length && hits[0].distance < menor) {
-          menor = hits[0].distance
+        const hitEstojo = raycaster.intersectObject(al.estojo.raiz, true)[0]
+        const hitCd = al.cd.raiz.visible ? raycaster.intersectObject(al.cd.raiz, true)[0] : undefined
+        const dEstojo = hitEstojo ? hitEstojo.distance : Infinity
+        const dCd = hitCd ? hitCd.distance : Infinity
+        const d = Math.min(dEstojo, dCd)
+        if (d < menor) {
+          menor = d
           melhor = i
+          tocado = dCd < dEstojo ? 'cd' : 'estojo'
         }
       })
       return melhor
@@ -336,12 +349,24 @@ function Album() {
       if (i < 0) return
 
       const al = albuns[i]
+
+      if (tocado === 'estojo' && al.alvo === 1 && al.prog === 1) {
+        al.virar = al.virar === 0 ? 1 : 0
+        if (reduzirMovimento()) al.vira = al.virar
+        pedirQuadro()
+        return
+      }
+
       al.alvo = al.alvo === 0 ? 1 : 0
       if (al.alvo === 1) ativo = i
+      if (al.alvo === 0) al.virar = 0
 
       if (reduzirMovimento()) {
         al.prog = al.alvo
-        if (al.alvo === 0) ativo = null
+        if (al.alvo === 0) {
+          ativo = null
+          al.vira = 0
+        }
         atualizar(0)
         render()
         return
