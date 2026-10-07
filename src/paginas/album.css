@@ -66,3 +66,84 @@
 .album-sobreposto .album-modelo {
   opacity: 0;
 }
+
+.album-rastro {
+  --album-rastro-lado: clamp(9rem, 18vw, 16rem);
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.album-rastro-img {
+  position: absolute;
+  display: block;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.album-dica {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff;
+  font-size: 0.7rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.album-dica-pulso {
+  position: relative;
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.album-dica-pulso::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  animation: album-dica-pulso 1.8s ease-out infinite;
+}
+
+.album-dica-texto {
+  opacity: 0.65;
+  transition: opacity 0.3s ease;
+}
+
+.album-dica-ativa .album-dica-texto {
+  opacity: 1;
+}
+
+@keyframes album-dica-pulso {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-dica-pulso::after {
+    animation: none;
+    transform: scale(2.2);
+    opacity: 0.5;
+  }
+}

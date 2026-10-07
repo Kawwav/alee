@@ -5,9 +5,9 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import './album.css'
 
 const ALBUNS = [
-  { estojo: '3d/diasantesdocaos.glb', cd: '3d/cddia.glb', lado: -1 },
-  { estojo: '3d/ptqfa.glb', cd: '3d/cdptqfa.glb', lado: 0 },
-  { estojo: '3d/caosdlx.glb', cd: '3d/cdcaos.glb', lado: 1 },
+  { estojo: '3d/diasantesdocaos.glb', cd: '3d/cddia.glb', lado: -1, gira: false },
+  { estojo: '3d/ptqfa.glb', cd: '3d/cdptqfa.glb', lado: 0, gira: false },
+  { estojo: '3d/caosdlx.glb', cd: '3d/cdcaos.glb', lado: 1, gira: true },
 ]
 
 const VIRAR_FRENTE = Math.PI
@@ -21,7 +21,14 @@ const DURACAO = 2.8
 const DURACAO_VIRAR = 0.9
 const ZOOM_ESTOJO = 1.25
 const SAIDA_CD = 0.6
-const POSICAO_ESTOJO_FIM = -0.34
+const POSICAO_ESTOJO_FIM = -0.2
+const POSICAO_CD_FIM = 0.14
+const SAIDA_LATERAL = 0.65
+
+const TOTAL_RASTRO = 10
+const DISTANCIA_RASTRO = 130
+const DURACAO_RASTRO = 1600
+const MAXIMO_RASTRO = 10
 const TAMANHO_CD_FIM = 0.62
 const VELOCIDADE_GIRO = 2.2
 const INCLINACAO_CD = -0.3
@@ -51,9 +58,49 @@ function descartar(raiz) {
   })
 }
 
+async function carregarRecortada(src) {
+  try {
+    const img = new Image()
+    img.src = src
+    await img.decode()
+    const c = document.createElement('canvas')
+    c.width = img.naturalWidth
+    c.height = img.naturalHeight
+    const ctx = c.getContext('2d', { willReadFrequently: true })
+    ctx.drawImage(img, 0, 0)
+    const { data, width, height } = ctx.getImageData(0, 0, c.width, c.height)
+
+    let x0 = width, y0 = height, x1 = -1, y1 = -1
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 16) {
+          if (x < x0) x0 = x
+          if (x > x1) x1 = x
+          if (y < y0) y0 = y
+          if (y > y1) y1 = y
+        }
+      }
+    }
+    if (x1 < 0) return { url: src, proporcao: width / height }
+
+    const w = x1 - x0 + 1
+    const h = y1 - y0 + 1
+    const escala = Math.min(1, 640 / Math.max(w, h))
+    const out = document.createElement('canvas')
+    out.width = Math.round(w * escala)
+    out.height = Math.round(h * escala)
+    out.getContext('2d').drawImage(c, x0, y0, w, h, 0, 0, out.width, out.height)
+    const blob = await new Promise((r) => out.toBlob(r, 'image/webp', 0.9))
+    return { url: URL.createObjectURL(blob), proporcao: w / h, blob: true }
+  } catch {
+    return { url: src, proporcao: 16 / 9 }
+  }
+}
+
 function Album() {
   const modeloRef = useRef(null)
   const palcoRef = useRef(null)
+  const rastroRef = useRef(null)
 
   useEffect(() => {
     const caixaModelo = modeloRef.current
@@ -97,6 +144,17 @@ function Album() {
     let ultimo = 0
 
     const tela = { x: 0, y: 0, dentro: false }
+    const pontoDica = new THREE.Vector3()
+    const textoDica = window.matchMedia('(hover: none)').matches ? 'toque' : 'clique'
+
+    albuns.forEach((al) => {
+      const el = document.createElement('div')
+      el.className = 'album-dica'
+      el.setAttribute('aria-hidden', 'true')
+      el.innerHTML = `<span class="album-dica-pulso"></span><span class="album-dica-texto">${textoDica}</span>`
+      palco.appendChild(el)
+      al.dica = el
+    })
 
     const render = () => renderer.render(scene, camera)
 
@@ -113,8 +171,11 @@ function Album() {
 
       const escalaRepouso = Math.min(1, (REPOUSO_LARGURA * larguraVisivel) / estojo.largura)
       const escalaPerto = Math.min(ZOOM_ESTOJO, (0.85 * larguraVisivel) / estojo.largura)
-      const escalaEstojo =
-        lerp(escalaRepouso, escalaPerto, a) * (1 - sumir)
+      const escalaEstojo = lerp(escalaRepouso, escalaPerto, a)
+
+      let direcao = Math.sign(al.cfg.lado)
+      if (direcao === 0) direcao = ativo !== null && albuns[ativo].cfg.lado < 0 ? 1 : -1
+      const saidaLateral = direcao * sumir * SAIDA_LATERAL * larguraVisivel
 
       const repousoX = al.cfg.lado * REPOUSO_X * larguraVisivel
       const estojoX0 = lerp(repousoX, 0, a)
@@ -123,10 +184,10 @@ function Album() {
 
       estojo.raiz.visible = sumir < 0.999
       estojo.raiz.scale.setScalar(Math.max(escalaEstojo, 0.0001))
-      estojo.raiz.position.set(estojoX, 0, estojoZ)
+      estojo.raiz.position.set(estojoX + saidaLateral, 0, estojoZ)
       estojo.raiz.rotation.set(
         lerp(INCLINACAO_X, 0, a) - al.seg.y * MOUSE_GIRO_X,
-        lerp(VIRAR_FRENTE + INCLINACAO_Y, VIRAR_FRENTE, a) + al.seg.x * MOUSE_GIRO_Y + Math.PI * c + Math.PI * suave(al.vira),
+        lerp(VIRAR_FRENTE + INCLINACAO_Y, VIRAR_FRENTE, a) + al.seg.x * MOUSE_GIRO_Y + (al.cfg.gira ? Math.PI * c + Math.PI * suave(al.vira) : 0),
         0
       )
 
@@ -137,7 +198,7 @@ function Album() {
       const escalaCd = lerp(escalaPerto, escalaCdFim, c)
 
       const deslize = b * SAIDA_CD * estojo.largura * escalaPerto
-      const cdX = lerp(estojoX0 + deslize, 0, c)
+      const cdX = lerp(estojoX0 + deslize, POSICAO_CD_FIM * larguraVisivel, c)
       const cdZ = lerp(0.25, 0.35, c)
 
       cd.raiz.scale.setScalar(escalaCd)
@@ -147,6 +208,17 @@ function Album() {
 
       al.giro += dt * VELOCIDADE_GIRO * c
       cd.girar.rotation.z = al.giro
+
+      if (al.dica) {
+        camera.updateMatrixWorld()
+        pontoDica
+          .set(estojoX + saidaLateral, -(estojo.altura * escalaEstojo) / 2, estojoZ)
+          .project(camera)
+        const px = (pontoDica.x * 0.5 + 0.5) * palco.clientWidth
+        const py = (-pontoDica.y * 0.5 + 0.5) * palco.clientHeight
+        al.dica.style.transform = `translate(calc(${px}px - 50%), ${py + 18}px)`
+        al.dica.style.opacity = ativo === null ? String(1 - a) : '0'
+      }
     }
 
     const atualizar = (dt) => {
@@ -191,6 +263,7 @@ function Album() {
       albuns.forEach((al, i) => {
         const alvoX = sobre === i ? nx : 0
         const alvoY = sobre === i ? ny : 0
+        if (al.dica) al.dica.classList.toggle('album-dica-ativa', sobre === i)
         al.seg.x += (alvoX - al.seg.x) * k
         al.seg.y += (alvoY - al.seg.y) * k
         if (Math.abs(alvoX - al.seg.x) > 0.001 || Math.abs(alvoY - al.seg.y) > 0.001) {
@@ -350,7 +423,7 @@ function Album() {
 
       const al = albuns[i]
 
-      if (tocado === 'estojo' && al.alvo === 1 && al.prog === 1) {
+      if (al.cfg.gira && tocado === 'estojo' && al.alvo === 1 && al.prog === 1) {
         al.virar = al.virar === 0 ? 1 : 0
         if (reduzirMovimento()) al.vira = al.virar
         pedirQuadro()
@@ -405,12 +478,101 @@ function Album() {
       pmrem.dispose()
       renderer.dispose()
       renderer.domElement.remove()
+      albuns.forEach((al) => al.dica?.remove())
+    }
+  }, [])
+
+  useEffect(() => {
+    const camada = rastroRef.current
+    const caixaModelo = modeloRef.current
+    if (!camada || !caixaModelo || reduzirMovimento()) return
+
+    const base = import.meta.env.BASE_URL
+    let cancelado = false
+    let imagens = []
+    let indice = 0
+    let ultimoX = null
+    let ultimoY = null
+
+    Promise.all(
+      Array.from({ length: TOTAL_RASTRO }, (_, i) =>
+        carregarRecortada(`${base}alee/alee${i + 1}.png`)
+      )
+    ).then((lista) => {
+      if (cancelado) lista.forEach((im) => im.blob && URL.revokeObjectURL(im.url))
+      else imagens = lista
+    })
+
+    const criar = (x, y) => {
+      const im = imagens[indice]
+      indice = (indice + 1) % imagens.length
+
+      const el = document.createElement('img')
+      el.className = 'album-rastro-img'
+      el.src = im.url
+      el.alt = ''
+      el.draggable = false
+      el.style.left = `${x}px`
+      el.style.top = `${y}px`
+      el.style.width = `calc(var(--album-rastro-lado) * ${Math.min(1, im.proporcao)})`
+      el.style.aspectRatio = `${im.proporcao}`
+      camada.appendChild(el)
+
+      while (camada.children.length > MAXIMO_RASTRO) camada.firstChild.remove()
+
+      const giro = (Math.random() - 0.5) * 12
+      const pos = `translate(-50%, -50%)`
+      const anim = el.animate(
+        [
+          { opacity: 0, transform: `${pos} scale(0.7) rotate(${giro}deg)` },
+          { opacity: 1, transform: `${pos} scale(1) rotate(${giro}deg)`, offset: 0.18 },
+          { opacity: 1, transform: `${pos} scale(1) rotate(${giro}deg)`, offset: 0.6 },
+          { opacity: 0, transform: `${pos} scale(0.92) rotate(${giro}deg)` },
+        ],
+        { duration: DURACAO_RASTRO, easing: 'ease-out' }
+      )
+      anim.onfinish = () => el.remove()
+    }
+
+    const aoMover = (ev) => {
+      if (ev.pointerType && ev.pointerType !== 'mouse') return
+      if (!imagens.length) return
+      if (parseFloat(getComputedStyle(caixaModelo).opacity) < 0.8) {
+        ultimoX = null
+        return
+      }
+      const r = camada.getBoundingClientRect()
+      const x = ev.clientX - r.left
+      const y = ev.clientY - r.top
+      if (x < 0 || y < 0 || x > r.width || y > r.height) {
+        ultimoX = null
+        return
+      }
+      if (ultimoX === null) {
+        ultimoX = x
+        ultimoY = y
+        return
+      }
+      if (Math.hypot(x - ultimoX, y - ultimoY) < DISTANCIA_RASTRO) return
+      ultimoX = x
+      ultimoY = y
+      criar(x, y)
+    }
+
+    window.addEventListener('pointermove', aoMover)
+
+    return () => {
+      cancelado = true
+      window.removeEventListener('pointermove', aoMover)
+      camada.replaceChildren()
+      imagens.forEach((im) => im.blob && URL.revokeObjectURL(im.url))
     }
   }, [])
 
   return (
     <section className={`album ${reduzirMovimento() ? '' : 'album-sobreposto'}`}>
-      <h2 className="album-titulo">Álbum</h2>
+      <div className="album-rastro" ref={rastroRef} aria-hidden="true" />
+      <h2 className="album-titulo">PURO CAOS</h2>
       <div className="album-modelo" ref={modeloRef} aria-hidden="true">
         <div className="album-palco" ref={palcoRef} />
       </div>
