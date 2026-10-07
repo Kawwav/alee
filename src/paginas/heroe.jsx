@@ -70,7 +70,7 @@ function Heroe() {
       </div>
 
       <div className="imagem">
-        <img className="foto" src="/heroe/alee.png" alt="Alee" />
+        <img className="foto" src={`${import.meta.env.BASE_URL}heroe/alee.png`} alt="Alee" />
       </div>
 
       <h1 className="titulo" ref={tituloRef}>
@@ -84,7 +84,7 @@ function Heroe() {
         >
           <video
             className="filme"
-            src="/heroe/alee.mp4"
+            src={`${import.meta.env.BASE_URL}heroe/alee.mp4`}
             autoPlay
             muted
             playsInline
