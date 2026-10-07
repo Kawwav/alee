@@ -1,0 +1,68 @@
+:root {
+  --album-fundo: #000;
+}
+
+.album {
+  min-height: 100svh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(2rem, 7vh, 4.5rem) clamp(1.25rem, 6vw, 6rem);
+  background: var(--album-fundo);
+  color: #fff;
+}
+
+.album-sobreposto {
+  position: sticky;
+  bottom: 0;
+  height: 100svh;
+  margin-top: -100svh;
+  overflow: hidden;
+}
+
+.album-titulo {
+  margin: 0;
+  font-family: 'Amsterdam', cursive;
+  font-weight: normal;
+  font-size: clamp(1.75rem, 4.5vw, 4rem);
+  line-height: 1.2;
+  position: relative;
+  z-index: 1;
+  will-change: transform, opacity, filter;
+}
+
+.album-modelo {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(80vmin, 36rem);
+  height: min(80vmin, 36rem);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.album-modelo canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.album-palco {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 100svh;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.album-sobreposto .album-titulo {
+  opacity: 0;
+}
+
+.album-sobreposto .album-modelo {
+  opacity: 0;
+}
