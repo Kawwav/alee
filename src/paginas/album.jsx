@@ -5,9 +5,9 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import './album.css'
 
 const ALBUNS = [
-  { estojo: '3d/diasantesdocaos.glb', cd: '3d/cddia.glb', lado: -1, gira: false },
-  { estojo: '3d/ptqfa.glb', cd: '3d/cdptqfa.glb', lado: 0, gira: false },
-  { estojo: '3d/caosdlx.glb', cd: '3d/cdcaos.glb', lado: 1, gira: true },
+  { estojo: '3d/diasantesdocaos.glb', cd: '3d/cddia.glb', lado: -1, gira: false, nome: 'DIAS ANTES DO CAOS' },
+  { estojo: '3d/ptqfa.glb', cd: '3d/cdptqfa.glb', lado: 0, gira: false, nome: 'PTQFA' },
+  { estojo: '3d/caosdlx.glb', cd: '3d/cdcaos.glb', lado: 1, gira: true, nome: 'CAOS DLX' },
 ]
 
 const VIRAR_FRENTE = Math.PI
@@ -36,6 +36,11 @@ const INCLINACAO_CD = -0.3
 const MOUSE_GIRO_Y = 0.45
 const MOUSE_GIRO_X = 0.3
 const MOUSE_SUAVIDADE = 5
+
+const EXPOSICAO = 0.65
+const EXPOSICAO_ABERTO = 0.42
+const LUZ_AMBIENTE = 0.55
+const LUZ_PRINCIPAL = 0.8
 
 const reduzirMovimento = () =>
   typeof window !== 'undefined' &&
@@ -101,6 +106,7 @@ function Album() {
   const modeloRef = useRef(null)
   const palcoRef = useRef(null)
   const rastroRef = useRef(null)
+  const rastroLigadoRef = useRef(true)
 
   useEffect(() => {
     const caixaModelo = modeloRef.current
@@ -110,15 +116,16 @@ function Album() {
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1
+    renderer.toneMappingExposure = EXPOSICAO
     palco.appendChild(renderer.domElement)
 
     const scene = new THREE.Scene()
     const pmrem = new THREE.PMREMGenerator(renderer)
     const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     scene.environment = envMap
+    scene.environmentIntensity = LUZ_AMBIENTE
 
-    const key = new THREE.DirectionalLight(0xffffff, 1.4)
+    const key = new THREE.DirectionalLight(0xffffff, LUZ_PRINCIPAL)
     key.position.set(2, 3, 4)
     scene.add(key)
 
@@ -151,7 +158,13 @@ function Album() {
       const el = document.createElement('div')
       el.className = 'album-dica'
       el.setAttribute('aria-hidden', 'true')
-      el.innerHTML = `<span class="album-dica-pulso"></span><span class="album-dica-texto">${textoDica}</span>`
+      const nome = document.createElement('span')
+      nome.className = 'album-dica-nome'
+      nome.textContent = al.cfg.nome
+      const linha = document.createElement('span')
+      linha.className = 'album-dica-linha'
+      linha.innerHTML = `<span class="album-dica-pulso"></span><span class="album-dica-texto">${textoDica}</span>`
+      el.append(nome, linha)
       palco.appendChild(el)
       al.dica = el
     })
@@ -223,6 +236,8 @@ function Album() {
 
     const atualizar = (dt) => {
       albuns.forEach((al, i) => atualizarAlbum(al, i, dt))
+      const abertura = albuns.reduce((m, al) => Math.max(m, al.prog), 0)
+      renderer.toneMappingExposure = lerp(EXPOSICAO, EXPOSICAO_ABERTO, suave(abertura))
     }
 
     const quadro = (t) => {
@@ -250,6 +265,7 @@ function Album() {
       })
 
       if (ativo !== null && albuns[ativo].prog === 0 && albuns[ativo].alvo === 0) ativo = null
+      rastroLigadoRef.current = ativo === null
 
       const animando = albuns.some((al) => al.prog !== al.alvo || al.vira !== al.virar)
       const sobre =
@@ -432,6 +448,7 @@ function Album() {
 
       al.alvo = al.alvo === 0 ? 1 : 0
       if (al.alvo === 1) ativo = i
+      if (ativo !== null) rastroLigadoRef.current = false
       if (al.alvo === 0) al.virar = 0
 
       if (reduzirMovimento()) {
@@ -537,6 +554,10 @@ function Album() {
     const aoMover = (ev) => {
       if (ev.pointerType && ev.pointerType !== 'mouse') return
       if (!imagens.length) return
+      if (!rastroLigadoRef.current) {
+        ultimoX = null
+        return
+      }
       if (parseFloat(getComputedStyle(caixaModelo).opacity) < 0.8) {
         ultimoX = null
         return
@@ -572,7 +593,7 @@ function Album() {
   return (
     <section className={`album ${reduzirMovimento() ? '' : 'album-sobreposto'}`}>
       <div className="album-rastro" ref={rastroRef} aria-hidden="true" />
-      <h2 className="album-titulo">PURO CAOS</h2>
+      <h2 className="album-titulo">PURO CAOS!!</h2>
       <div className="album-modelo" ref={modeloRef} aria-hidden="true">
         <div className="album-palco" ref={palcoRef} />
       </div>
