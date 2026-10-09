@@ -396,6 +396,7 @@ html {
 
   .imagem {
     --descer: 10%;
+    --brilho: 0.6;
   }
 
   .titulo {
