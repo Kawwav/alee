@@ -191,3 +191,32 @@
     animation: none;
   }
 }
+
+@media (max-width: 768px) {
+  .album-titulo {
+    font-size: clamp(1.4rem, 6vw, 2.25rem);
+    line-height: 2.4;
+    letter-spacing: 0.16em;
+    word-spacing: 0.6em;
+    text-align: center;
+    text-wrap: balance;
+  }
+
+  .album-dica {
+    gap: 0.4rem;
+    max-width: 6.5rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .album-dica-nome {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .album-rastro {
+    --album-rastro-lado: 8rem;
+  }
+}

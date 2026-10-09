@@ -16,6 +16,10 @@ const INCLINACAO_X = 0.08
 
 const REPOUSO_X = 0.3
 const REPOUSO_LARGURA = 0.28
+const REPOUSO_X_VERTICAL = 0.32
+const REPOUSO_LARGURA_VERTICAL = 0.29
+const LADO_FIM_VERTICAL = 0.62
+const AFASTAMENTO_VERTICAL = 0.6
 
 const DURACAO = 2.8
 const DURACAO_VIRAR = 0.9
@@ -134,6 +138,7 @@ function Album() {
     let distancia = 3
     let alturaVisivel = 1
     let larguraVisivel = 1
+    let vertical = false
 
     const albuns = ALBUNS.map((cfg) => ({
       cfg,
@@ -182,22 +187,28 @@ function Album() {
       const b = trecho(prog, 0.3, 0.62)
       const c = trecho(prog, 0.55, 1)
 
-      const escalaRepouso = Math.min(1, (REPOUSO_LARGURA * larguraVisivel) / estojo.largura)
+      const larguraRepouso = vertical ? REPOUSO_LARGURA_VERTICAL : REPOUSO_LARGURA
+      const lado = LADO_FIM_VERTICAL * larguraVisivel
+      const escalaRepouso = Math.min(1, (larguraRepouso * larguraVisivel) / estojo.largura)
       const escalaPerto = Math.min(ZOOM_ESTOJO, (0.85 * larguraVisivel) / estojo.largura)
-      const escalaEstojo = lerp(escalaRepouso, escalaPerto, a)
+      const escalaFim = vertical
+        ? Math.min(escalaPerto, lado / Math.max(estojo.largura, estojo.altura))
+        : escalaPerto
+      const escalaEstojo = lerp(lerp(escalaRepouso, escalaPerto, a), escalaFim, c)
 
       let direcao = Math.sign(al.cfg.lado)
       if (direcao === 0) direcao = ativo !== null && albuns[ativo].cfg.lado < 0 ? 1 : -1
       const saidaLateral = direcao * sumir * SAIDA_LATERAL * larguraVisivel
 
-      const repousoX = al.cfg.lado * REPOUSO_X * larguraVisivel
+      const repousoX = al.cfg.lado * (vertical ? REPOUSO_X_VERTICAL : REPOUSO_X) * larguraVisivel
       const estojoX0 = lerp(repousoX, 0, a)
-      const estojoX = lerp(estojoX0, POSICAO_ESTOJO_FIM * larguraVisivel, c)
+      const estojoX = lerp(estojoX0, vertical ? 0 : POSICAO_ESTOJO_FIM * larguraVisivel, c)
+      const estojoY = vertical ? lerp(0, AFASTAMENTO_VERTICAL * lado, c) : 0
       const estojoZ = 0.25 * a
 
       estojo.raiz.visible = sumir < 0.999
       estojo.raiz.scale.setScalar(Math.max(escalaEstojo, 0.0001))
-      estojo.raiz.position.set(estojoX + saidaLateral, 0, estojoZ)
+      estojo.raiz.position.set(estojoX + saidaLateral, estojoY, estojoZ)
       estojo.raiz.rotation.set(
         lerp(INCLINACAO_X, 0, a) - al.seg.y * MOUSE_GIRO_X,
         lerp(VIRAR_FRENTE + INCLINACAO_Y, VIRAR_FRENTE, a) + al.seg.x * MOUSE_GIRO_Y + (al.cfg.gira ? Math.PI * c + Math.PI * suave(al.vira) : 0),
@@ -206,16 +217,17 @@ function Album() {
 
       cd.raiz.visible = b > 0.001 && sumir < 0.999
 
-      const diametroFim = Math.min(TAMANHO_CD_FIM * alturaVisivel, 0.5 * larguraVisivel)
+      const diametroFim = vertical ? lado : Math.min(TAMANHO_CD_FIM * alturaVisivel, 0.5 * larguraVisivel)
       const escalaCdFim = diametroFim / cd.diametro
       const escalaCd = lerp(escalaPerto, escalaCdFim, c)
 
-      const deslize = b * SAIDA_CD * estojo.largura * escalaPerto
-      const cdX = lerp(estojoX0 + deslize, POSICAO_CD_FIM * larguraVisivel, c)
+      const deslize = b * SAIDA_CD * (vertical ? estojo.altura : estojo.largura) * escalaPerto
+      const cdX = vertical ? estojoX0 : lerp(estojoX0 + deslize, POSICAO_CD_FIM * larguraVisivel, c)
+      const cdY = vertical ? lerp(-deslize, -AFASTAMENTO_VERTICAL * lado, c) : 0
       const cdZ = lerp(0.25, 0.35, c)
 
       cd.raiz.scale.setScalar(escalaCd)
-      cd.raiz.position.set(cdX, 0, cdZ)
+      cd.raiz.position.set(cdX, cdY, cdZ)
       cd.inclinar.rotation.x = INCLINACAO_CD * c - al.seg.y * MOUSE_GIRO_X
       cd.inclinar.rotation.y = al.seg.x * MOUSE_GIRO_Y
 
@@ -304,6 +316,7 @@ function Album() {
       if (!w || !h) return
       renderer.setSize(w, h)
       camera.aspect = w / h
+      vertical = camera.aspect < 1
 
       const caixa = Math.min(0.8 * Math.min(w, h), 576)
       const pxPorUnidade = caixa / 1.3
