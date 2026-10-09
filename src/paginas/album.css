@@ -43,6 +43,13 @@
   animation: album-granulado-texto var(--texto-granulado-velocidade) steps(1) infinite;
 }
 
+.album-saida {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform;
+}
+
 .album-modelo {
   position: absolute;
   inset: 0;

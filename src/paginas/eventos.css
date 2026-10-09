@@ -12,6 +12,7 @@
   --granulado-velocidade: 0.8s;
 
   position: relative;
+  z-index: 1;
   height: calc(100vh + (var(--qtd) - 1) * 60vh);
   background: var(--fundo);
   color: var(--tinta);

@@ -12,7 +12,7 @@ html {
 
 .heroe-trilho {
   position: relative;
-  z-index: 1; /* fica acima do Álbum, que aparece por baixo durante o zoom */
+  z-index: 1;
 }
 
 .secao {
@@ -176,12 +176,12 @@ html {
 .arco {
   --raio: min(34vmin, 360px);
   --altura-item: clamp(4rem, 15vmin, 9rem);
-  --queda: 70svh;         
-  --queda-atraso: 2.8s;   
-  --queda-passo: 0.18s;  
+  --queda: 70svh;
+  --queda-atraso: 2.8s;
+  --queda-passo: 0.18s;
   --queda-duracao: 2.4s;
-  --desfoque-max: 1.5px;  
-  --apagar: 0.45;          
+  --desfoque-max: 1.5px;
+  --apagar: 0.45;
   --centro-y: 50%;
 
   position: absolute;
@@ -389,8 +389,29 @@ html {
 }
 
 @media (max-width: 768px), (orientation: portrait) {
+  .imagem-palco,
+  .imagem {
+    height: 88svh;
+  }
+
   .imagem {
     --descer: 10%;
+  }
+
+  .titulo {
+    --texto-y: 22%;
+    --texto-tamanho: clamp(2.75rem, 13vw, 5rem);
+  }
+
+  .arco {
+    --centro-y: 26%;
+    --altura-item: clamp(5rem, 19vmin, 9rem);
+    --raio: min(38vmin, 360px);
+  }
+
+  .frase {
+    --frase-tamanho: clamp(1.25rem, 5vw, 2rem);
+    max-width: min(32ch, 55vw);
   }
 
   .foto {

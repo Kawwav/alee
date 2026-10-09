@@ -594,8 +594,10 @@ function Album() {
     <section className={`album ${reduzirMovimento() ? '' : 'album-sobreposto'}`}>
       <div className="album-rastro" ref={rastroRef} aria-hidden="true" />
       <h2 className="album-titulo">CAOS É O INÍCIO DE TUDO</h2>
-      <div className="album-modelo" ref={modeloRef} aria-hidden="true">
-        <div className="album-palco" ref={palcoRef} />
+      <div className="album-saida">
+        <div className="album-modelo" ref={modeloRef} aria-hidden="true">
+          <div className="album-palco" ref={palcoRef} />
+        </div>
       </div>
     </section>
   )

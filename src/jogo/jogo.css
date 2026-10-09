@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+.jogo {
+  --escala-arvore: 0.6;
+  position: relative;
+  height: 100svh;
+  overflow: hidden;
+  background: #000;
+  cursor: none;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: 'Press Start 2P', monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-rendering: optimizeSpeed;
+}
+
+.jogo__camada {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left bottom;
+  image-rendering: pixelated;
+  user-select: none;
+  pointer-events: none;
+}
+
+.jogo__ceu {
+  z-index: 0;
+  object-position: center bottom;
+}
+
+.jogo__terra {
+  z-index: 1;
+}
+
+.jogo__arvore {
+  inset: auto;
+  left: 0;
+  bottom: 0;
+  width: max(100vw, 177.78svh);
+  height: max(100svh, 56.25vw);
+  object-fit: fill;
+  z-index: 2;
+  transform-origin: left bottom;
+  transform: translateY(calc(max(100svh, 56.25vw) * -0.1435 * (1 - var(--escala-arvore)))) scale(var(--escala-arvore));
+}
+
+.jogo__alvos {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.jogo__sprite {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform;
+  image-rendering: pixelated;
+}
+
+.jogo__grama {
+  --escala-grama: 0.6;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 4;
+  display: flex;
+  overflow: hidden;
+  pointer-events: none;
+  height: calc(max(100svh, 56.25vw) * var(--escala-grama));
+  bottom: calc(max(100svh, 56.25vw) * 0.1435 * (1 - var(--escala-grama)));
+}
+
+.jogo__grama-tile {
+  flex: none;
+  display: block;
+  width: calc(max(100vw, 177.78svh) * var(--escala-grama));
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+  user-select: none;
+}
+
+.jogo__grama-tile--espelho {
+  transform: scaleX(-1);
+}
+
+.jogo__hit {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  image-rendering: pixelated;
+  animation: jogo-hit 0.45s steps(6) forwards;
+}
+
+@keyframes jogo-hit {
+  0% {
+    transform: scale(0.3);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.jogo__hud {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 7;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 4px solid #fff;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: default;
+}
+
+.jogo__hud button,
+.jogo__hud a {
+  color: #fff;
+  background: transparent;
+  border: 3px solid #fff;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 10px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.jogo__hud button:hover,
+.jogo__hud a:hover {
+  background: #fff;
+  color: #000;
+}
+
+.jogo__inicio {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(16px, 3.5vw, 40px);
+  line-height: 1.6;
+  text-align: center;
+  text-shadow: 4px 4px 0 #000;
+  pointer-events: none;
+}
+
+.jogo__mao {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 8;
+  width: max(55vw, 50svh);
+  pointer-events: none;
+  visibility: hidden;
+  will-change: transform;
+}
+
+.jogo__mao img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: 90% 90%;
+  user-select: none;
+}
+
+.jogo__toasty {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+  height: 45svh;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
+  animation: jogo-toasty 1.6s ease-in-out forwards;
+}
+
+@keyframes jogo-toasty {
+  0% {
+    transform: translateX(100%);
+  }
+  20% {
+    transform: translateX(0);
+  }
+  75% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 768px), (max-height: 500px) {
+  .jogo {
+    --escala-arvore: 0.4;
+  }
+
+  .jogo__toasty {
+    height: 28svh;
+  }
+}

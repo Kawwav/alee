@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './eventos.css'
+import { lenis } from '../rolagem.js'
 
 const BASE = import.meta.env.BASE_URL
 
@@ -111,7 +112,11 @@ function Eventos() {
     if (!el) return
     const total = el.offsetHeight - window.innerHeight
     const y = el.offsetTop + (total * i) / (EVENTOS.length - 1)
-    window.scrollTo({ top: y, behavior: 'smooth' })
+    if (lenis) {
+      lenis.scrollTo(y, { duration: 1.6, easing: (t) => 1 - Math.pow(1 - t, 4) })
+    } else {
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
   }
 
   const esconderRotulo = () => {

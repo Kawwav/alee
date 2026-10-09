@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import './heroe.css'
+import { lenis } from '../rolagem.js'
 
 gsap.registerPlugin(ScrollTrigger)
 ScrollTrigger.config({ ignoreMobileResize: true })
@@ -21,15 +22,20 @@ const ZOOM_INICIO = 0.3
 const SAIDA_PASSO = 0.06 
 const SAIDA_DURACAO = 0.4 
 const DISTANCIA_SCROLL = 400
-const MODELO_INICIO = 0.88 // progresso do scroll em que o modelo 3D é disparado
-const MODELO_ATRASO = 0.35 // atraso (s) depois do gatilho
-const MODELO_DURACAO = 2.8 // duração (s) da entrada, bem suave
+const MODELO_INICIO = 0.88 
+const MODELO_ATRASO = 0.35 
+const MODELO_DURACAO = 2.8 
+const DURACAO_TOTAL = 1.3
+const SAIDA_MODELOS_INICIO = 1
+const SAIDA_MODELOS_DURACAO = 0.22
+const SAIDA_TITULO_INICIO = 1.04
+const SAIDA_TITULO_DURACAO = 0.18
 
 const reduzirMovimento = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-function Heroe() {
+function Heroe({ aoLiberar }) {
   const [fase, setFase] = useState(() => (reduzirMovimento() ? 'pronto' : 'video'))
   const timerVideo = useRef(null)
   const timerSeguranca = useRef(null)
@@ -83,9 +89,15 @@ function Heroe() {
     if (liberado) return
     window.scrollTo(0, 0)
     document.documentElement.style.overflow = 'hidden'
+    lenis?.stop()
     return () => {
       document.documentElement.style.overflow = ''
+      lenis?.start()
     }
+  }, [liberado])
+
+  useEffect(() => {
+    if (liberado) aoLiberar?.()
   }, [liberado])
 
   useEffect(() => {
@@ -108,14 +120,14 @@ function Heroe() {
             trigger: trilhoRef.current,
             start: 'top top',
             end: 'bottom bottom',
-            scrub: 0.8,
+            scrub: 0.3,
             invalidateOnRefresh: true,
             onRefreshInit: definirOrigem,
             onUpdate: (self) => {
-              secaoRef.current?.classList.toggle('zoomando', self.progress > ZOOM_INICIO - 0.03)
+              const tempo = self.progress * DURACAO_TOTAL
+              secaoRef.current?.classList.toggle('zoomando', tempo > ZOOM_INICIO - 0.03)
 
-              // O modelo 3D usa animação por tempo (não presa ao scroll) para ser super suave
-              const deveEntrar = self.progress >= MODELO_INICIO
+              const deveEntrar = tempo >= MODELO_INICIO
               if (entradaModelo && deveEntrar !== modeloVisivel) {
                 modeloVisivel = deveEntrar
                 if (deveEntrar) entradaModelo.timeScale(1).play()
@@ -136,16 +148,14 @@ function Heroe() {
           {
             scale: () =>
               Math.max(30, (window.innerWidth * 4) / tituloRef.current.offsetWidth),
-            duration: 0.55, // termina em 0.85
+            duration: 0.55, 
             ease: 'power3.in',
           },
           ZOOM_INICIO
         )
 
-        // "Alee" some no final do zoom (0.75 → 0.85)
         .to(cenaRef.current, { opacity: 0, duration: 0.1, ease: 'power1.in' }, 0.75)
 
-      // Só depois que o zoom completa e o Alee sumiu (0.85) o Álbum aparece
       const tituloAlbum = document.querySelector('.album-titulo')
       if (tituloAlbum) {
         tl.fromTo(
@@ -162,8 +172,6 @@ function Heroe() {
         )
       }
 
-      // O modelo 3D entra da direita com delay e uma easing muito longa e suave.
-      // Roda por tempo (não por scroll): toca ao passar de MODELO_INICIO e reverte ao voltar.
       const modeloAlbum = document.querySelector('.album-modelo')
       if (modeloAlbum) {
         entradaModelo = gsap
@@ -182,8 +190,38 @@ function Heroe() {
           )
       }
 
-      // garante que a timeline sempre dura 1.0 (mesmo sem os elementos do Álbum)
-      tl.set({}, {}, 1)
+      const saidaModelos = document.querySelector('.album-saida')
+      if (saidaModelos) {
+        tl.fromTo(
+          saidaModelos,
+          { x: 0 },
+          {
+            x: () => -window.innerWidth * 1.2,
+            duration: SAIDA_MODELOS_DURACAO,
+            ease: 'power2.in',
+            immediateRender: false,
+          },
+          SAIDA_MODELOS_INICIO
+        )
+      }
+
+      if (tituloAlbum) {
+        tl.fromTo(
+          tituloAlbum,
+          { y: 0, opacity: 1, filter: 'blur(0px)' },
+          {
+            y: () => -altura() * 0.5,
+            opacity: 0,
+            filter: 'blur(8px)',
+            duration: SAIDA_TITULO_DURACAO,
+            ease: 'power3.in',
+            immediateRender: false,
+          },
+          SAIDA_TITULO_INICIO
+        )
+      }
+
+      tl.set({}, {}, DURACAO_TOTAL)
 
       arcoRef.current.querySelectorAll('.saida').forEach((el) => {
         const passo = Number(el.dataset.passo)
@@ -216,7 +254,7 @@ function Heroe() {
     <div
       className="heroe-trilho"
       ref={trilhoRef}
-      style={reduzirMovimento() ? undefined : { height: `${100 + DISTANCIA_SCROLL}svh` }}
+      style={reduzirMovimento() ? undefined : { height: `${100 + DISTANCIA_SCROLL * DURACAO_TOTAL}svh` }}
     >
     <section className={`secao ${fase === 'video' ? 'tocando' : ''}`} ref={secaoRef}>
       <div className="portal" ref={portalRef} aria-hidden="true" />

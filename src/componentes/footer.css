@@ -1,0 +1,144 @@
+.cortina {
+  isolation: isolate;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--album-fundo, #000);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.footer__fundo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+  pointer-events: none;
+  transform: scale(1.12);
+  will-change: transform;
+}
+
+.footer__paralaxe {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  align-items: end;
+  pointer-events: none;
+  transform: translate3d(110vw, 0, 0);
+  will-change: transform;
+}
+
+.footer__alees {
+  grid-area: 1 / 1;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  width: min(100%, 1500px);
+  height: auto;
+  max-height: 100svh;
+  object-fit: contain;
+  object-position: center bottom;
+  user-select: none;
+  pointer-events: none;
+}
+
+.footer__alees--ativa {
+  opacity: 1;
+}
+
+.footer__acoes {
+  position: absolute;
+  right: clamp(1rem, 3vw, 2.5rem);
+  bottom: calc(clamp(1rem, 3vh, 2rem) + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.footer__botao {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 12px 20px;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  border: 1px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: 'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.4s ease;
+}
+
+.footer__botao::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.65, 0, 0.2, 1);
+}
+
+.footer__botao:hover,
+.footer__botao:focus-visible {
+  color: #000;
+}
+
+.footer__botao:hover::before,
+.footer__botao:focus-visible::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.footer__botao:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 768px), (orientation: portrait) {
+  .footer__alees {
+    width: 160%;
+    max-width: none;
+    margin-bottom: 8svh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer__fundo {
+    transform: none;
+  }
+
+  .footer__paralaxe {
+    transform: none;
+  }
+
+  .footer__alees,
+  .footer__botao,
+  .footer__botao::before {
+    transition: none;
+  }
+}
