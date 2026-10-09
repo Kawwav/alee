@@ -121,9 +121,37 @@
 
 @media (max-width: 768px), (orientation: portrait) {
   .footer__alees {
-    width: 160%;
+    width: 125%;
     max-width: none;
-    margin-bottom: 8svh;
+    max-height: calc(100svh - 5rem);
+    margin-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer__acoes {
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .footer__botao {
+    flex: 1 1 0;
+    padding: 13px 10px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .footer__acoes {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
+
+  .footer__botao {
+    padding: 8px 14px;
+    font-size: 11px;
   }
 }
 

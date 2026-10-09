@@ -187,21 +187,33 @@ function Eventos() {
             className="trilho"
             style={{ '--ativo': ativo }}
           >
-            {EVENTOS.map((e, i) => (
-              <figure
-                key={e.id}
-                className={i === ativo ? 'cartaz cartaz--ativo' : 'cartaz'}
-                style={{ '--proporcao': e.proporcao }}
-                onPointerMove={moverNoCartaz}
-                onPointerLeave={esconderRotulo}
-              >
-                <span className="canto canto--se" />
-                <span className="canto canto--sd" />
-                <span className="canto canto--ie" />
-                <span className="canto canto--id" />
-                <img src={e.imagem} alt={`Cartaz do ${e.nome}`} />
-              </figure>
-            ))}
+            {EVENTOS.map((e, i) => {
+              const [num, den] = e.proporcao.split('/').map(Number)
+              return (
+                <div
+                  key={e.id}
+                  className={i === ativo ? 'slide slide--ativo' : 'slide'}
+                >
+                  <figure
+                    className={i === ativo ? 'cartaz cartaz--ativo' : 'cartaz'}
+                    style={{ '--proporcao': e.proporcao, '--razao': num / den }}
+                    onPointerMove={moverNoCartaz}
+                    onPointerLeave={esconderRotulo}
+                  >
+                    <span className="canto canto--se" />
+                    <span className="canto canto--sd" />
+                    <span className="canto canto--ie" />
+                    <span className="canto canto--id" />
+                    <img src={e.imagem} alt={`Cartaz do ${e.nome}`} />
+                  </figure>
+                  <div className="evento-info">
+                    <h3 className="evento-info__nome">{e.nome}</h3>
+                    <p className="evento-info__data">{e.data}</p>
+                    <p className="evento-info__local">{e.local}</p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 

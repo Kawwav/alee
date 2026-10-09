@@ -3,6 +3,8 @@
 .eventos {
   --altura-cartaz: min(54vh, 460px);
   --espaco: 22px;
+  --altura-info: 0px;
+  --altura-slide: calc(var(--altura-cartaz) + var(--altura-info));
   --tinta: #fff;
   --apagado: #4d4d4d;
   --colchete: #c4372d;
@@ -176,13 +178,21 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(50% - var(--altura-cartaz) / 2);
+  top: calc(50% - var(--altura-slide) / 2);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--espaco);
-  transform: translateY(calc(var(--ativo) * -1 * (var(--altura-cartaz) + var(--espaco))));
+  transform: translateY(calc(var(--ativo) * -1 * (var(--altura-slide) + var(--espaco))));
   transition: transform 0.7s cubic-bezier(0.65, 0, 0.2, 1);
+}
+
+.slide {
+  display: contents;
+}
+
+.evento-info {
+  display: none;
 }
 
 .cartaz {
@@ -278,41 +288,97 @@
 
 @media (max-width: 860px) {
   .eventos {
-    --altura-cartaz: min(42vh, 360px);
+    --altura-cartaz: min(44vh, 380px);
+    --altura-info: 130px;
   }
 
   .eventos__palco {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
     grid-template-areas:
-      'imagens imagens'
-      'lista datas';
+      'lista'
+      'imagens';
     align-items: start;
-    padding: 0 20px;
-    row-gap: 8px;
+    padding: 28px 20px 0;
+    row-gap: 0;
+  }
+
+  .eventos__lista {
+    grid-area: lista;
+    margin-top: 0;
+  }
+
+  .eventos__lista .eventos__rotulo {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .eventos__botoes,
+  .eventos__datas {
+    display: none;
   }
 
   .eventos__imagens {
     grid-area: imagens;
-    height: 52vh;
+    height: auto;
+    min-height: 0;
+    align-self: stretch;
   }
 
-  .trilho {
-    top: calc(26vh - var(--altura-cartaz) / 2);
+  .slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 100%;
+    height: var(--altura-slide);
+    opacity: 0.25;
+    transition: opacity 0.5s ease;
   }
 
-  .eventos__lista { grid-area: lista; }
-  .eventos__datas { grid-area: datas; }
-
-  .eventos__lista,
-  .eventos__datas {
-    margin-top: 0;
+  .slide--ativo {
+    opacity: 1;
   }
 
-  .eventos__item,
-  .data,
-  .eventos__rotulo {
+  .cartaz {
+    width: min(100%, calc(var(--altura-cartaz) * var(--razao)));
+    height: auto;
+    max-height: var(--altura-cartaz);
+    opacity: 1;
+    filter: none;
+  }
+
+  .evento-info {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    text-align: center;
+  }
+
+  .evento-info__nome {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--tinta);
+  }
+
+  .evento-info__data {
+    margin: 8px 0 0;
     font-size: 12px;
+    text-transform: uppercase;
+    color: #c8c8c8;
+  }
+
+  .evento-info__local {
+    margin: 6px auto 0;
+    max-width: 32ch;
+    font-size: 11px;
+    line-height: 1.5;
+    text-transform: uppercase;
+    color: #9a9a9a;
   }
 }
 
@@ -322,6 +388,7 @@
   }
 
   .trilho,
+  .slide,
   .cartaz,
   .cartaz img,
   .saiba-mais__caixa,
